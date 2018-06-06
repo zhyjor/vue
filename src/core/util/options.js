@@ -65,6 +65,9 @@ function mergeData (to: Object, from: ?Object): Object {
 /**
  * Data
  */
+/**
+ * 接下来看看mergeDataOrFn操作，如果options.data是个函数，主要是执行函数后，再进行data的merge
+ */
 export function mergeDataOrFn (
   parentVal: any,
   childVal: any,
@@ -112,7 +115,16 @@ strats.data = function (
   childVal: any,
   vm?: Component
 ): ?Function {
+  /**
+   * Vue.extend 方法里面是这么合并属性的：
+   * Sub.options = mergeOptions(
+   *   Super.options,
+   *   extendOptions
+   * )
+   * 在Vue的组件继承树上的merge是不存在vm的
+   */
   if (!vm) {
+    // 如果子属性不是个函数，那么返回父属性的值
     if (childVal && typeof childVal !== 'function') {
       process.env.NODE_ENV !== 'production' && warn(
         'The "data" option should be a function ' +
@@ -364,9 +376,16 @@ export function mergeOptions (
     child = child.options
   }
 
+  // 统一props格式
   normalizeProps(child, vm)
+
   normalizeInject(child, vm)
+  // 统一directives格式
   normalizeDirectives(child)
+  // 如果存在child.extends
+  // ...
+  // 如果存在child.mixins
+  // ...
   const extendsFrom = child.extends
   if (extendsFrom) {
     parent = mergeOptions(parent, extendsFrom, vm)
@@ -376,6 +395,7 @@ export function mergeOptions (
       parent = mergeOptions(parent, child.mixins[i], vm)
     }
   }
+  // 针对不同的键值，采用不同的merge策略
   const options = {}
   let key
   for (key in parent) {

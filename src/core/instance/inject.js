@@ -14,6 +14,7 @@ export function initProvide (vm: Component) {
 }
 
 export function initInjections (vm: Component) {
+  // 因为并没有```vm._provided```此时 ```result``` 返回的是个 null，也就没有进行```defineReactive```
   const result = resolveInject(vm.$options.inject, vm)
   if (result) {
     observerState.shouldConvert = false

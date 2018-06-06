@@ -142,6 +142,7 @@ function initData (vm: Component) {
         vm
       )
     } else if (!isReserved(key)) {
+      // 代理数据，当访问this.xxx的时候，代理到this.data.xxx
       proxy(vm, `_data`, key)
     }
   }

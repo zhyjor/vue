@@ -1,14 +1,14 @@
 /* @flow */
 
 import config from '../config'
-import { initProxy } from './proxy'
-import { initState } from './state'
-import { initRender } from './render'
-import { initEvents } from './events'
-import { mark, measure } from '../util/perf'
-import { initLifecycle, callHook } from './lifecycle'
-import { initProvide, initInjections } from './inject'
-import { extend, mergeOptions, formatComponentName } from '../util/index'
+import {initProxy} from './proxy'
+import {initState} from './state'
+import {initRender} from './render'
+import {initEvents} from './events'
+import {mark, measure} from '../util/perf'
+import {initLifecycle, callHook} from './lifecycle'
+import {initProvide, initInjections} from './inject'
+import {extend, mergeOptions, formatComponentName} from '../util/index'
 
 let uid = 0
 
@@ -26,9 +26,11 @@ export function initMixin (Vue: Class<Component>) {
       mark(startTag)
     }
 
+    // 如果是Vue的实例，则不需要被observe
     // a flag to avoid this being observed
     vm._isVue = true
     // merge options
+    // 第一步： options参数的处理
     if (options && options._isComponent) {
       // optimize internal component instantiation
       // since dynamic options merging is pretty slow, and none of the
@@ -41,6 +43,7 @@ export function initMixin (Vue: Class<Component>) {
         vm
       )
     }
+    // 第二步： renderProxy
     /* istanbul ignore else */
     if (process.env.NODE_ENV !== 'production') {
       initProxy(vm)
@@ -49,11 +52,15 @@ export function initMixin (Vue: Class<Component>) {
     }
     // expose real self
     vm._self = vm
+    // 第三步： vm的生命周期相关变量初始化
     initLifecycle(vm)
+    // 第四步： vm的事件监听初始化
     initEvents(vm)
     initRender(vm)
     callHook(vm, 'beforeCreate')
     initInjections(vm) // resolve injections before data/props
+
+    // 第五步： vm的状态初始化，prop/data/computed/method/watch都在这里完成初始化，因此也是Vue实例create的关键。
     initState(vm)
     initProvide(vm) // resolve provide after data/props
     callHook(vm, 'created')
@@ -65,6 +72,7 @@ export function initMixin (Vue: Class<Component>) {
       measure(`vue ${vm._name} init`, startTag, endTag)
     }
 
+// 第六步：render & mount
     if (vm.$options.el) {
       vm.$mount(vm.$options.el)
     }

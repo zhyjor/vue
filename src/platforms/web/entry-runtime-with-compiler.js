@@ -1,13 +1,13 @@
 /* @flow */
 
 import config from 'core/config'
-import { warn, cached } from 'core/util/index'
-import { mark, measure } from 'core/util/perf'
+import {warn, cached} from 'core/util/index'
+import {mark, measure} from 'core/util/perf'
 
 import Vue from './runtime/index'
-import { query } from './util/index'
-import { shouldDecodeNewlines } from './util/compat'
-import { compileToFunctions } from './compiler/index'
+import {query} from './util/index'
+import {shouldDecodeNewlines} from './util/compat'
+import {compileToFunctions} from './compiler/index'
 
 const idToTemplate = cached(id => {
   const el = query(id)
@@ -15,10 +15,9 @@ const idToTemplate = cached(id => {
 })
 
 const mount = Vue.prototype.$mount
-Vue.prototype.$mount = function (
-  el?: string | Element,
-  hydrating?: boolean
-): Component {
+// 此处mount即为运行时版的 $mount
+Vue.prototype.$mount = function (el?: string | Element,
+                                 hydrating?: boolean): Component {
   el = el && query(el)
 
   /* istanbul ignore if */
@@ -61,8 +60,8 @@ Vue.prototype.$mount = function (
       if (process.env.NODE_ENV !== 'production' && config.performance && mark) {
         mark('compile')
       }
-
-      const { render, staticRenderFns } = compileToFunctions(template, {
+// 如果不存在 render 函数，则会将模板转换成render函数
+      const {render, staticRenderFns} = compileToFunctions(template, {
         shouldDecodeNewlines,
         delimiters: options.delimiters,
         comments: options.comments
@@ -77,6 +76,7 @@ Vue.prototype.$mount = function (
       }
     }
   }
+  // 调用$mount方法
   return mount.call(this, el, hydrating)
 }
 

@@ -22,7 +22,9 @@ export let isUpdatingChildComponent: boolean = false
 
 export function initLifecycle (vm: Component) {
   const options = vm.$options
-
+  /**
+   * 这里判断是否存在父示例，如果存在，则通过 while 循环，建立所有组建的父子关系
+   */
   // locate first non-abstract parent
   let parent = options.parent
   if (parent && !options.abstract) {
@@ -32,6 +34,9 @@ export function initLifecycle (vm: Component) {
     parent.$children.push(vm)
   }
 
+  /**
+   * 为组件实例挂载相应属性，并初始化
+   */
   vm.$parent = parent
   vm.$root = parent ? parent.$root : vm
 
@@ -146,6 +151,7 @@ export function mountComponent (
   hydrating?: boolean
 ): Component {
   vm.$el = el
+  // // 如果不存在render函数，则直接创建一个空的VNode节点
   if (!vm.$options.render) {
     vm.$options.render = createEmptyVNode
     if (process.env.NODE_ENV !== 'production') {
@@ -166,6 +172,7 @@ export function mountComponent (
       }
     }
   }
+  // 检测完render后，开始调用beforeMount声明周期
   callHook(vm, 'beforeMount')
 
   let updateComponent
@@ -193,11 +200,15 @@ export function mountComponent (
     }
   }
 
+  // 这里是上面所说的观察者，这里注意第二个expOrFn参数是一个函数
+  // 会在new Watcher的时候通过get方法执行一次
+  // 也就是会触发第一次Dom的更新
   vm._watcher = new Watcher(vm, updateComponent, noop)
   hydrating = false
 
   // manually mounted instance, call mounted on self
   // mounted is called for render-created child components in its inserted hook
+  // 触发$mount函数
   if (vm.$vnode == null) {
     vm._isMounted = true
     callHook(vm, 'mounted')

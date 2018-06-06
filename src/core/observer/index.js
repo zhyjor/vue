@@ -136,6 +136,8 @@ export function defineReactive (
   customSetter?: ?Function,
   shallow?: boolean
 ) {
+  // 这是订阅器，初始化，这里其实需要了解一下为什么需要这个订阅器，
+  // 多处依赖的问题
   const dep = new Dep()
 
   const property = Object.getOwnPropertyDescriptor(obj, key)
@@ -154,6 +156,7 @@ export function defineReactive (
     get: function reactiveGetter () {
       const value = getter ? getter.call(obj) : val
       if (Dep.target) {
+        // 依赖收集
         dep.depend()
         if (childOb) {
           childOb.dep.depend()
@@ -180,6 +183,7 @@ export function defineReactive (
         val = newVal
       }
       childOb = !shallow && observe(newVal)
+      // 通知
       dep.notify()
     }
   })
