@@ -9,18 +9,22 @@
  * http://erik.eae.net/simplehtmlparser/simplehtmlparser.js
  */
 
-import { makeMap, no } from 'shared/util'
-import { isNonPhrasingTag } from 'web/compiler/util'
+import {makeMap, no} from 'shared/util'
+import {isNonPhrasingTag} from 'web/compiler/util'
 
 // Regular Expressions for parsing tags and attributes
+// 该正则式可匹配到 <div id="index"> 的 id="index" 属性部分
 const attribute = /^\s*([^\s"'<>\/=]+)(?:\s*(=)\s*(?:"([^"]*)"+|'([^']*)'+|([^\s"'=<>`]+)))?/
 // could use https://www.w3.org/TR/1999/REC-xml-names-19990114/#NT-QName
 // but for Vue templates we can enforce a simple charset
 const ncname = '[a-zA-Z_][\\w\\-\\.]*'
 const qnameCapture = `((?:${ncname}\\:)?${ncname})`
+// 匹配起始标签
 const startTagOpen = new RegExp(`^<${qnameCapture}`)
 const startTagClose = /^\s*(\/?)>/
+// 匹配结束标签
 const endTag = new RegExp(`^<\\/${qnameCapture}[^>]*>`)
+// 匹配DOCTYPE、注释等特殊标签
 const doctype = /^<!DOCTYPE [^>]+>/i
 const comment = /^<!--/
 const conditionalComment = /^<!\[/
@@ -61,8 +65,10 @@ export function parseHTML (html, options) {
   let index = 0
   let last, lastTag
   while (html) {
+    // 保留 html 副本
     last = html
     // Make sure we're not in a plaintext content element like script/style
+    // 如果没有lastTag，并确保我们不是在一个纯文本内容元素中：script、style、textarea
     if (!lastTag || !isPlainTextElement(lastTag)) {
       let textEnd = html.indexOf('<')
       if (textEnd === 0) {
@@ -124,7 +130,7 @@ export function parseHTML (html, options) {
           !startTagOpen.test(rest) &&
           !comment.test(rest) &&
           !conditionalComment.test(rest)
-        ) {
+          ) {
           // < in plain text, be forgiving and treat it as text
           next = rest.indexOf('<', 1)
           if (next < 0) break
@@ -139,7 +145,7 @@ export function parseHTML (html, options) {
         text = html
         html = ''
       }
-
+// 绘制文本内容，使用 options.char 方法。
       if (options.chars && text) {
         options.chars(text)
       }
@@ -185,19 +191,27 @@ export function parseHTML (html, options) {
   }
 
   function parseStartTag () {
+    //判断html中是否存在开始标签
     const start = html.match(startTagOpen)
     if (start) {
+      // 定义 match 结构
       const match = {
-        tagName: start[1],
-        attrs: [],
-        start: index
+        tagName: start[1],// 标签名
+        attrs: [],// 属性名
+        start: index // 起点位置
       }
+      /**
+       * 通过传入变量n来截取字符串，这也是Vue解析的重要方法，通过不断地蚕食掉html字符串，一步步完成对他的解析过程
+       */
       advance(start[0].length)
       let end, attr
+      // 如果还没有到结束标签的位置
+      // 存入属性
       while (!(end = html.match(startTagClose)) && (attr = html.match(attribute))) {
         advance(attr[0].length)
         match.attrs.push(attr)
       }
+      // 返回处理后的标签match结构
       if (end) {
         match.unarySlash = end[1]
         advance(end[0].length)
@@ -208,6 +222,7 @@ export function parseHTML (html, options) {
   }
 
   function handleStartTag (match) {
+    // match 是上面调用方法的时候传递过来的数据结构
     const tagName = match.tagName
     const unarySlash = match.unarySlash
 
@@ -222,17 +237,27 @@ export function parseHTML (html, options) {
 
     const unary = isUnaryTag(tagName) || !!unarySlash
 
+    // 备份属性数组的长度
     const l = match.attrs.length
+    // 构建长度为1的空数组
     const attrs = new Array(l)
     for (let i = 0; i < l; i++) {
       const args = match.attrs[i]
       // hackish work around FF bug https://bugzilla.mozilla.org/show_bug.cgi?id=369778
       if (IS_REGEX_CAPTURING_BROKEN && args[0].indexOf('""') === -1) {
-        if (args[3] === '') { delete args[3] }
-        if (args[4] === '') { delete args[4] }
-        if (args[5] === '') { delete args[5] }
+        if (args[3] === '') {
+          delete args[3]
+        }
+        if (args[4] === '') {
+          delete args[4]
+        }
+        if (args[5] === '') {
+          delete args[5]
+        }
       }
+      // 取定义属性的值
       const value = args[3] || args[4] || args[5] || ''
+      // 改变attr的格式为 [{name: 'id', value: 'demo'}]
       attrs[i] = {
         name: args[1],
         value: decodeAttr(
@@ -242,8 +267,11 @@ export function parseHTML (html, options) {
       }
     }
 
+    // stack中记录当前解析的标签
+    // 如果不是自闭和标签
+    // 这里的stack这个变量在parseHTML中定义，作用是为了存放标签名 为了和结束标签进行匹配的作用。
     if (!unary) {
-      stack.push({ tag: tagName, lowerCasedTag: tagName.toLowerCase(), attrs: attrs })
+      stack.push({tag: tagName, lowerCasedTag: tagName.toLowerCase(), attrs: attrs})
       lastTag = tagName
     }
 

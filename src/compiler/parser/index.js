@@ -119,6 +119,7 @@ export function parse (
         attrs = guardIESVGBug(attrs)
       }
 
+      // 创建基础的 ASTElement
       let element: ASTElement = createASTElement(tag, attrs, currentParent)
       if (ns) {
         element.ns = ns
@@ -139,6 +140,9 @@ export function parse (
       }
 
       if (!inVPre) {
+        // 判断有没有 v-pre 指令的元素。如果有的话 element.pre = true
+        // 官网有介绍：<span v-pre>{{ this will not be compiled }}</span>
+        // 跳过这个元素和它的子元素的编译过程。可以用来显示原始 Mustache 标签。跳过大量没有指令的节点会加快编译。
         processPre(element)
         if (element.pre) {
           inVPre = true
@@ -148,6 +152,7 @@ export function parse (
         inPre = true
       }
       if (inVPre) {
+        // 处理原始属性
         processRawAttrs(element)
       } else if (!element.processed) {
         // structural directives
@@ -158,6 +163,7 @@ export function parse (
         processElement(element, options)
       }
 
+      // 检查根节点约束
       function checkRootConstraints (el) {
         if (process.env.NODE_ENV !== 'production') {
           if (el.tag === 'slot' || el.tag === 'template') {
@@ -177,10 +183,12 @@ export function parse (
 
       // tree management
       if (!root) {
+        // 如果不存在根节点
         root = element
         checkRootConstraints(root)
       } else if (!stack.length) {
         // allow root elements with v-if, v-else-if and v-else
+        // 允许有 v-if, v-else-if 和 v-else 的根元素
         if (root.if && (element.elseif || element.else)) {
           checkRootConstraints(element)
           addIfCondition(root, {
@@ -203,6 +211,7 @@ export function parse (
           const name = element.slotTarget || '"default"'
           ;(currentParent.scopedSlots || (currentParent.scopedSlots = {}))[name] = element
         } else {
+          // 将元素插入 children 数组中
           currentParent.children.push(element)
           element.parent = currentParent
         }

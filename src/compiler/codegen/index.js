@@ -44,7 +44,11 @@ export function generate (
   const state = new CodegenState(options)
   const code = ast ? genElement(ast, state) : '_c("div")'
   return {
+    // 最外层包一个 with(this) 之后返回
     render: `with(this){return ${code}}`,
+    // 这个数组中的函数与 VDOM 中的 diff 算法优化相关
+    // 我们会在编译阶段给后面不会发生变化的 VNode 节点打上 staticRoot 为 true 的标
+    // 那些被标记为 staticRoot 节点的 VNode 就会单独生成 staticRenderFns
     staticRenderFns: state.staticRenderFns
   }
 }
